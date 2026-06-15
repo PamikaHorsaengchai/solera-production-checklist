@@ -213,6 +213,59 @@
     padding:32px 24px;
     overflow-x:auto;
   }
+  /* ── TALENT BRING-LIST ── */
+  .tl-group { margin-bottom:24px; background:var(--white); border:1px solid var(--wire); }
+  .tl-group-head {
+    font-size:10px; font-weight:700; letter-spacing:.22em; text-transform:uppercase;
+    color:var(--smoke); padding:10px 20px; background:var(--fog);
+    border-bottom:1px solid var(--wire);
+  }
+  .tl-outfit-card {
+    display:flex; align-items:stretch; gap:0;
+    border-bottom:1px solid var(--fog); padding:20px;
+  }
+  .tl-outfit-card:last-child { border-bottom:none; }
+  .tl-outfit-body { flex:1; }
+  .tl-outfit-badge {
+    display:inline-block; font-size:9px; font-weight:700; letter-spacing:.18em;
+    text-transform:uppercase; color:#fff; padding:4px 12px; margin-bottom:10px;
+  }
+  .tl-outfit-desc { font-size:13.5px; line-height:1.5; color:var(--ink); margin-bottom:6px; }
+  .tl-outfit-note { font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--smoke); }
+  .tl-outfit-snap {
+    width:70px; height:80px; background:var(--fog); border:1px solid var(--wire);
+    flex-shrink:0; margin-left:16px;
+  }
+  /* checklist items inside talent groups */
+  .tl-group .item { padding:12px 20px; }
+  .tl-notes {
+    background:var(--white); border:1px solid var(--wire); margin-bottom:24px; padding:20px;
+  }
+  .tl-notes-head {
+    font-size:10px; font-weight:700; letter-spacing:.22em; text-transform:uppercase;
+    color:var(--smoke); margin-bottom:14px;
+  }
+  .tl-notes-list { list-style:none; padding:0; }
+  .tl-notes-list li {
+    font-size:13.5px; line-height:1.5; color:#444; padding:4px 0 4px 16px; position:relative;
+  }
+  .tl-notes-list li::before { content:'—'; position:absolute; left:0; color:var(--wire); }
+  .tl-crew {
+    background:var(--fog); border:1px solid var(--wire); padding:20px; margin-bottom:24px;
+  }
+  .tl-crew-head {
+    font-size:10px; font-weight:700; letter-spacing:.22em; text-transform:uppercase;
+    color:var(--smoke); margin-bottom:12px;
+  }
+  .tl-crew-list { list-style:none; padding:0; margin-bottom:16px; }
+  .tl-crew-list li {
+    font-size:13.5px; color:#444; line-height:1.6; padding:2px 0 2px 16px; position:relative;
+  }
+  .tl-crew-list li::before { content:'—'; position:absolute; left:0; color:var(--wire); }
+  .tl-always {
+    font-size:10px; font-weight:700; letter-spacing:.22em; text-transform:uppercase;
+    color:var(--smoke); margin-bottom:10px; padding-top:14px; border-top:1px solid var(--wire);
+  }
 </style>
 </head>
 <body>
@@ -228,6 +281,7 @@
   <button class="tab active" onclick="switchTab('checklist',this)">Checklist</button>
   <button class="tab" onclick="switchTab('flow',this)">QC Flow</button>
   <button class="tab" onclick="switchTab('diagram',this)">Diagram</button>
+  <button class="tab" onclick="switchTab('talent',this)">Talent Bring-List</button>
 </div>
 
 <!-- ═══════════════════════════════════════════
@@ -476,6 +530,78 @@
   </div>
 </div>
 
+  <!-- ═══════════════════════════════════════════
+       PANEL 4 — TALENT BRING-LIST
+  ════════════════════════════════════════════ -->
+  <div class="panel" id="panel-talent">
+    <div class="flow-intro" style="margin-bottom:28px;">
+      Please confirm all items packed the night before. Outfit 01·B and Outfit 03 are KOL-prepared —
+      send reference selfies to View (NPlan) by <strong>14 June</strong> for sign-off.
+    </div>
+
+    <!-- WARDROBE -->
+    <div class="tl-group">
+      <div class="tl-group-head">Wardrobe — KOL Prepared</div>
+
+      <div class="tl-outfit-card">
+        <div class="tl-outfit-body">
+          <div class="tl-outfit-badge" style="background:var(--s01);">Outfit 01·B — Park &amp; Sketch</div>
+          <div class="tl-outfit-desc">All-white cohort linen shirt &amp; short &nbsp;·&nbsp; Scene 01, after trunk change</div>
+          <div class="tl-outfit-note">Send snapshot ref to View (NPlan) by 14 June</div>
+        </div>
+        <div class="tl-outfit-snap"></div>
+      </div>
+
+      <div class="tl-outfit-card">
+        <div class="tl-outfit-body">
+          <div class="tl-outfit-badge" style="background:var(--s03);">Outfit 03 — Evening Studio</div>
+          <div class="tl-outfit-desc">Black square-neck ribbed long-sleeve &nbsp;·&nbsp; white fluid wrap skirt with stud detail &nbsp;·&nbsp; Scene 03</div>
+          <div class="tl-outfit-note">Send snapshot ref to View (NPlan) by 14 June</div>
+        </div>
+        <div class="tl-outfit-snap"></div>
+      </div>
+    </div>
+
+    <!-- FOOTWEAR -->
+    <div class="tl-group">
+      <div class="tl-group-head">Footwear</div>
+      <div id="tl-root-footwear"></div>
+    </div>
+
+    <!-- ACCESSORIES -->
+    <div class="tl-group">
+      <div class="tl-group-head">Accessories &amp; Personal</div>
+      <div id="tl-root-accessories"></div>
+    </div>
+
+    <!-- NOTES -->
+    <div class="tl-notes">
+      <div class="tl-notes-head">Notes</div>
+      <ul class="tl-notes-list">
+        <li>All items to be steamed / pressed and packed the night before.</li>
+        <li>Outfit 01·B and Outfit 03 are KOL-prepared — please send reference selfies to View (NPlan) by 14 June for sign-off.</li>
+        <li>Agency will provide all jewelry, styling accessories, and Scene 02 wardrobe.</li>
+        <li>Flats must be clean, minimal, and in one of: black / beige / white.</li>
+      </ul>
+    </div>
+
+    <!-- CREW BRING LIST -->
+    <div class="tl-crew">
+      <div class="tl-crew-head">Crew Bring List — Cherry (NPlan)</div>
+      <ul class="tl-crew-list">
+        <li>Alcohol pads</li>
+        <li>Jewelry wipes / cleaner</li>
+        <li>Umbrella</li>
+        <li>Picnic blanket</li>
+      </ul>
+      <div class="tl-always">Always Carry — On Person Throughout the Day</div>
+      <ul class="tl-crew-list">
+        <li>Alcohol pads &nbsp;·&nbsp; Jewelry wipes / cleaner</li>
+      </ul>
+    </div>
+
+  </div><!-- end panel-talent -->
+
 <script>
 // ── CHECKLIST DATA ──
 const SECTIONS = [
@@ -558,7 +684,57 @@ function switchTab(id,btn){
   btn.classList.add("active");
 }
 
+// ── TALENT BRING-LIST ──
+const TL_GROUPS = [
+  { root:"tl-root-footwear", items:[
+    {text:"Running Shoes", note:"Scene 01 post-run sequence · no shocking colours — white or neutral"},
+    {text:"Ankle Socks — White", note:"To pair with running shoes · Scene 01"},
+    {text:"Simple Flats", note:"For park walking & sketch · black, beige or white"},
+  ]},
+  { root:"tl-root-accessories", items:[
+    {text:"Reading Glasses", note:"For sketchbook & ceramic studio detail shots · bring your own pair"},
+    {text:"Sketch Books (Optional)", note:"For the park sketching sequence · bring if available"},
+    {text:"Bag (Optional)", note:"Braided or tote · if you would like to bring any personal bags, feel free"},
+  ]},
+];
+
+const tlState = {};
+TL_GROUPS.forEach((g,gi)=>{
+  tlState[gi] = g.items.map(()=>false);
+});
+
+function buildTalent(){
+  TL_GROUPS.forEach((g,gi)=>{
+    const root = document.getElementById(g.root);
+    if(!root) return;
+    root.innerHTML="";
+    g.items.forEach((item,idx)=>{
+      const row=document.createElement("div");
+      row.className="item"+(tlState[gi][idx]?" done":"");
+      const isDone=tlState[gi][idx];
+      row.innerHTML=`
+        <div class="box" style="${isDone?"background:#0F0F0F;border-color:#0F0F0F;":""}">
+          <span class="tick">✓</span>
+        </div>
+        <div class="item-label">
+          <strong>${item.text}</strong>
+          <div style="font-size:12px;color:#8A8680;margin-top:2px;">${item.note}</div>
+        </div>`;
+      row.addEventListener("click",()=>{
+        tlState[gi][idx]=!tlState[gi][idx];
+        const d=tlState[gi][idx];
+        row.classList.toggle("done",d);
+        const box=row.querySelector(".box");
+        box.style.background=d?"#0F0F0F":"#fff";
+        box.style.borderColor=d?"#0F0F0F":"#C8C5BE";
+      });
+      root.appendChild(row);
+    });
+  });
+}
+
 build();
+buildTalent();
 </script>
 </body>
 </html>
