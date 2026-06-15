@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pre-Shoot QC Checklist — The Way She Wears It</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg:   #F4F2EE;
+    --white:#FFFFFF;
+    --ink:  #0F0F0F;
+    --smoke:#8A8680;
+    --wire: #DEDAD4;
+    --fog:  #EDEAE4;
+    --gold: #9A7B2E;
+    --s01:  #2B3D2C;
+    --s02:  #1C1C3A;
+    --s03:  #3D2213;
+    --sq:   #7A5A1A;
+  }
+  body {
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    min-height: 100vh;
+    padding: 48px 40px 72px;
+    max-width: 860px;
+    margin: 0 auto;
+  }
+
+  /* ── MASTHEAD ── */
+  .masthead { margin-bottom: 40px; padding-bottom: 24px; border-bottom: 2px solid var(--ink); }
+  .studio-tag { font-size: 10px; letter-spacing:.22em; text-transform:uppercase; color:var(--smoke); margin-bottom:8px; }
+  .doc-title  { font-size:32px; font-weight:700; letter-spacing:-.025em; line-height:1.1; margin-bottom:4px; }
+  .doc-sub    { font-size:11px; letter-spacing:.18em; text-transform:uppercase; color:var(--smoke); }
+
+  /* ── TABS ── */
+  .tabs { display:flex; gap:0; margin-bottom:32px; border-bottom:2px solid var(--ink); }
+  .tab {
+    font-size:10px; letter-spacing:.2em; text-transform:uppercase;
+    padding:10px 22px; cursor:pointer; color:var(--smoke);
+    border:none; background:none; font-family:inherit;
+    border-bottom:2px solid transparent; margin-bottom:-2px;
+    transition:all .15s;
+  }
+  .tab:hover { color:var(--ink); }
+  .tab.active { color:var(--ink); font-weight:700; border-bottom-color:var(--ink); }
+
+  /* ── PANELS ── */
+  .panel { display:none; }
+  .panel.active { display:block; }
+
+  /* ── OVERALL PROGRESS ── */
+  .total-bar-wrap { display:flex; align-items:center; gap:16px; margin-bottom:32px; }
+  .total-track { flex:1; height:2px; background:var(--wire); border-radius:1px; overflow:hidden; }
+  .total-fill  { height:100%; background:var(--ink); border-radius:1px; transition:width .35s ease; width:0%; }
+  .total-label { font-size:10px; letter-spacing:.15em; text-transform:uppercase; color:var(--smoke); white-space:nowrap; }
+
+  /* ── SECTION CARDS ── */
+  .section { margin-bottom:20px; background:var(--white); border:1px solid var(--wire); }
+  .section-head {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:14px 20px;
+  }
+  .section-head.s01{background:var(--s01);} .section-head.s02{background:var(--s02);}
+  .section-head.s03{background:var(--s03);} .section-head.sq {background:var(--sq);}
+  .section-name { font-size:11px; font-weight:700; letter-spacing:.2em; text-transform:uppercase; color:#fff; }
+  .section-role { font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:rgba(255,255,255,.45); margin-top:2px; }
+  .section-prog { display:flex; align-items:center; gap:10px; }
+  .prog-count  { font-size:10px; color:rgba(255,255,255,.55); letter-spacing:.1em; min-width:32px; text-align:right; }
+  .prog-track  { width:60px; height:2px; background:rgba(255,255,255,.2); border-radius:1px; overflow:hidden; }
+  .prog-fill   { height:100%; background:rgba(255,255,255,.7); border-radius:1px; transition:width .3s ease; width:0%; }
+
+  /* ── ITEMS ── */
+  .items { padding:0; }
+  .item {
+    display:flex; align-items:flex-start; gap:16px;
+    padding:13px 20px; border-bottom:1px solid var(--fog);
+    cursor:pointer; transition:background .1s;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .item:last-child { border-bottom:none; }
+  .item:hover { background:#FAFAF8; }
+  .item.done  { background:#FAFAF8; }
+  .box {
+    width:17px; height:17px; border:1.5px solid #C8C5BE; border-radius:2px;
+    flex-shrink:0; margin-top:2px; display:flex; align-items:center; justify-content:center;
+    transition:background .12s, border-color .12s; background:var(--white);
+  }
+  .item.done .box { border-color:var(--ink); background:var(--ink); }
+  .tick { display:none; color:#fff; font-size:10px; font-weight:700; }
+  .item.done .tick { display:block; }
+  .item-label { font-size:13.5px; line-height:1.5; color:var(--ink); transition:color .12s; flex:1; }
+  .item.done .item-label { color:#BBB8B2; text-decoration:line-through; text-decoration-color:#D0CDC7; }
+  .section.s01 .item.done .box{background:var(--s01);border-color:var(--s01);}
+  .section.s02 .item.done .box{background:var(--s02);border-color:var(--s02);}
+  .section.s03 .item.done .box{background:var(--s03);border-color:var(--s03);}
+  .section.sq  .item.done .box{background:var(--sq); border-color:var(--sq);}
+
+  /* ── FOOTER ── */
+  .footer {
+    margin-top:36px; padding-top:18px; border-top:1px solid var(--wire);
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  .footer-tag { font-size:10px; letter-spacing:.16em; text-transform:uppercase; color:#CCC; }
+  .reset {
+    font-size:10px; letter-spacing:.16em; text-transform:uppercase;
+    color:var(--smoke); background:none; border:1px solid var(--wire);
+    padding:7px 16px; cursor:pointer; transition:all .12s; font-family:inherit;
+  }
+  .reset:hover { background:var(--ink); color:#fff; border-color:var(--ink); }
+
+  /* ── FLOW DIAGRAM ── */
+  .flow-wrap { padding: 8px 0 32px; }
+  .flow-intro {
+    font-size:13px; color:var(--smoke); line-height:1.6;
+    margin-bottom:32px; letter-spacing:.01em;
+  }
+
+  .flow-steps { display:flex; flex-direction:column; gap:0; }
+
+  .flow-step {
+    display:grid;
+    grid-template-columns: 48px 1fr;
+    gap:0 20px;
+    position:relative;
+  }
+
+  /* connector line */
+  .flow-step:not(:last-child) .flow-left::after {
+    content:'';
+    position:absolute;
+    left:23px;
+    top:48px;
+    width:2px;
+    height:calc(100% - 8px);
+    background:var(--wire);
+  }
+
+  .flow-left {
+    display:flex; flex-direction:column; align-items:center;
+    position:relative; padding-bottom:0;
+  }
+
+  .step-num {
+    width:48px; height:48px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-size:13px; font-weight:700; color:#fff;
+    flex-shrink:0; position:relative; z-index:1;
+  }
+  .step-num.s01{background:var(--s01);} .step-num.s02{background:var(--s02);}
+  .step-num.s03{background:var(--s03);} .step-num.sq {background:var(--sq);}
+
+  .flow-right {
+    padding: 10px 0 32px;
+  }
+
+  .flow-tag {
+    display:inline-block;
+    font-size:9px; font-weight:700; letter-spacing:.22em; text-transform:uppercase;
+    padding:3px 10px; margin-bottom:8px;
+    color:#fff;
+  }
+  .flow-tag.s01{background:var(--s01);} .flow-tag.s02{background:var(--s02);}
+  .flow-tag.s03{background:var(--s03);} .flow-tag.sq {background:var(--sq);}
+
+  .flow-step-title {
+    font-size:16px; font-weight:700; letter-spacing:-.01em;
+    margin-bottom:8px; color:var(--ink);
+  }
+
+  .flow-items { list-style:none; padding:0; }
+  .flow-items li {
+    font-size:13.5px; line-height:1.5; color:#444;
+    padding:4px 0 4px 18px; position:relative;
+  }
+  .flow-items li::before {
+    content:'—';
+    position:absolute; left:0;
+    color:var(--wire); font-size:12px;
+  }
+
+  /* final gate */
+  .flow-gate {
+    background:var(--ink); color:#fff;
+    padding:20px 24px; margin-top:4px;
+    display:grid; grid-template-columns:48px 1fr; gap:0 20px; align-items:start;
+  }
+  .gate-icon {
+    width:48px; height:48px; border:2px solid rgba(255,255,255,.3);
+    display:flex; align-items:center; justify-content:center;
+    font-size:20px;
+  }
+  .gate-title { font-size:11px; font-weight:700; letter-spacing:.2em; text-transform:uppercase; margin-bottom:8px; color:rgba(255,255,255,.6); }
+  .gate-items { list-style:none; }
+  .gate-items li { font-size:13px; line-height:1.6; color:rgba(255,255,255,.85); padding:2px 0; }
+  .gate-items li::before { content:'✓ '; color:rgba(255,255,255,.4); }
+
+  /* ── DIAGRAM SVG section ── */
+  .diagram-section {
+    margin-top:40px;
+    padding-top:24px;
+    border-top:1px solid var(--wire);
+  }
+  .diagram-label {
+    font-size:10px; letter-spacing:.22em; text-transform:uppercase;
+    color:var(--smoke); margin-bottom:20px;
+  }
+  .diagram-svg-wrap {
+    background:var(--white);
+    border:1px solid var(--wire);
+    padding:32px 24px;
+    overflow-x:auto;
+  }
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="studio-tag">Sapiens Creative Studio &nbsp;·&nbsp; The Way She Wears It &nbsp;·&nbsp; 17 June 2026</div>
+  <h1 class="doc-title">Pre-Shoot Role &amp; QC Checklist</h1>
+  <div class="doc-sub">On-Set Quality Control &nbsp;·&nbsp; All Crew</div>
+</header>
+
+<!-- TABS -->
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('checklist',this)">Checklist</button>
+  <button class="tab" onclick="switchTab('flow',this)">QC Flow</button>
+  <button class="tab" onclick="switchTab('diagram',this)">Diagram</button>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     PANEL 1 — CHECKLIST
+════════════════════════════════════════════ -->
+<div class="panel active" id="panel-checklist">
+
+  <div class="total-bar-wrap">
+    <div class="total-track"><div class="total-fill" id="total-fill"></div></div>
+    <div class="total-label" id="total-label">0 / 0 complete</div>
+  </div>
+
+  <div id="checklist-root"></div>
+
+  <footer class="footer">
+    <div class="footer-tag">Sapiens &nbsp;·&nbsp; Confidential</div>
+    <button class="reset" onclick="resetAll()">Reset All</button>
+  </footer>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     PANEL 2 — QC FLOW
+════════════════════════════════════════════ -->
+<div class="panel" id="panel-flow">
+  <div class="flow-wrap">
+    <p class="flow-intro">
+      A repeating sequence executed before every scene. Product handover always starts and ends with Patty.
+      Cherry bridges product and KOL readiness. Film closes the loop on creative execution.
+    </p>
+
+    <div class="flow-steps">
+
+      <div class="flow-step">
+        <div class="flow-left"><div class="step-num s01">1</div></div>
+        <div class="flow-right">
+          <span class="flow-tag s01">Patty</span>
+          <div class="flow-step-title">Product Control</div>
+          <ul class="flow-items">
+            <li>Patty controls all products on set.</li>
+            <li>Product handover starts and ends with Patty.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="flow-step">
+        <div class="flow-left"><div class="step-num s02">2</div></div>
+        <div class="flow-right">
+          <span class="flow-tag s02">Cherry</span>
+          <div class="flow-step-title">QA Support</div>
+          <ul class="flow-items">
+            <li>Cherry collects product from Patty before each scene.</li>
+            <li>Cherry supports QA and returns product to Patty after use.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="flow-step">
+        <div class="flow-left"><div class="step-num s02">3</div></div>
+        <div class="flow-right">
+          <span class="flow-tag s02">Cherry</span>
+          <div class="flow-step-title">KOL Readiness</div>
+          <ul class="flow-items">
+            <li>Cherry checks KOL readiness before each shot.</li>
+            <li>Cherry handles fitting, dress-up, outfit, hair, makeup, and jewelry check.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="flow-step">
+        <div class="flow-left"><div class="step-num s01">4</div></div>
+        <div class="flow-right">
+          <span class="flow-tag s01">Patty</span>
+          <div class="flow-step-title">Style &amp; Creative QC</div>
+          <ul class="flow-items">
+            <li>Patty QC on styling, product placement, and overall creative direction.</li>
+            <li>Patty approves the look before camera rolls.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="flow-step">
+        <div class="flow-left"><div class="step-num s03">5</div></div>
+        <div class="flow-right">
+          <span class="flow-tag s03">Film</span>
+          <div class="flow-step-title">Mood, Shot &amp; Visibility QC</div>
+          <ul class="flow-items">
+            <li>Film QC on mood, framing, shots, and project visibility.</li>
+            <li>Film checks BTS moments, lighting, movement, and shot atmosphere.</li>
+          </ul>
+        </div>
+      </div>
+
+    </div><!-- end flow-steps -->
+
+    <!-- FINAL GATE -->
+    <div class="flow-gate">
+      <div class="gate-icon">▶</div>
+      <div>
+        <div class="gate-title">Before Each Shot — Final Gate</div>
+        <ul class="gate-items">
+          <li>Product cleaned and positioned.</li>
+          <li>KOL fully dressed and camera-ready.</li>
+          <li>Styling and creative direction approved by Patty.</li>
+          <li>Mood, framing, and visibility approved by Film.</li>
+          <li>Final go-ahead before shooting.</li>
+        </ul>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     PANEL 3 — DIAGRAM
+════════════════════════════════════════════ -->
+<div class="panel" id="panel-diagram">
+  <div class="flow-wrap">
+    <p class="flow-intro">Visual flow of product and approval routing on shoot day. Repeats per scene.</p>
+
+    <div class="diagram-svg-wrap">
+      <svg viewBox="0 0 760 620" width="100%" xmlns="http://www.w3.org/2000/svg" font-family="'Helvetica Neue',Helvetica,Arial,sans-serif">
+
+        <!-- ── LEGEND ── -->
+        <rect x="0" y="0" width="760" height="28" fill="#F4F2EE"/>
+        <rect x="10" y="8" width="12" height="12" fill="#2B3D2C" rx="1"/>
+        <text x="28" y="19" font-size="9" fill="#8A8680" letter-spacing="1">PATTY</text>
+        <rect x="80" y="8" width="12" height="12" fill="#1C1C3A" rx="1"/>
+        <text x="98" y="19" font-size="9" fill="#8A8680" letter-spacing="1">CHERRY</text>
+        <rect x="166" y="8" width="12" height="12" fill="#3D2213" rx="1"/>
+        <text x="184" y="19" font-size="9" fill="#8A8680" letter-spacing="1">FILM</text>
+        <rect x="230" y="8" width="12" height="12" fill="#0F0F0F" rx="1"/>
+        <text x="248" y="19" font-size="9" fill="#8A8680" letter-spacing="1">GATE / SHOOT</text>
+
+        <!-- ═══ ROW 1: Product Control ═══ -->
+        <!-- PATTY node -->
+        <rect x="20" y="52" width="160" height="60" fill="#2B3D2C" rx="2"/>
+        <text x="100" y="78" text-anchor="middle" font-size="9" fill="rgba(255,255,255,.5)" letter-spacing="1.5">STEP 1 · PATTY</text>
+        <text x="100" y="96" text-anchor="middle" font-size="12" font-weight="700" fill="#fff">Product Control</text>
+
+        <!-- arrow right -->
+        <line x1="180" y1="82" x2="218" y2="82" stroke="#DEDAD4" stroke-width="1.5"/>
+        <polygon points="218,78 226,82 218,86" fill="#DEDAD4"/>
+
+        <!-- ═══ ROW 1: QA Support ═══ -->
+        <rect x="226" y="52" width="160" height="60" fill="#1C1C3A" rx="2"/>
+        <text x="306" y="78" text-anchor="middle" font-size="9" fill="rgba(255,255,255,.5)" letter-spacing="1.5">STEP 2 · CHERRY</text>
+        <text x="306" y="96" text-anchor="middle" font-size="12" font-weight="700" fill="#fff">QA Support</text>
+
+        <!-- arrow right -->
+        <line x1="386" y1="82" x2="424" y2="82" stroke="#DEDAD4" stroke-width="1.5"/>
+        <polygon points="424,78 432,82 424,86" fill="#DEDAD4"/>
+
+        <!-- ═══ KOL Readiness ═══ -->
+        <rect x="432" y="52" width="160" height="60" fill="#1C1C3A" rx="2"/>
+        <text x="512" y="78" text-anchor="middle" font-size="9" fill="rgba(255,255,255,.5)" letter-spacing="1.5">STEP 3 · CHERRY</text>
+        <text x="512" y="96" text-anchor="middle" font-size="12" font-weight="700" fill="#fff">KOL Readiness</text>
+
+        <!-- arrow down from KOL readiness -->
+        <line x1="512" y1="112" x2="512" y2="190" stroke="#DEDAD4" stroke-width="1.5"/>
+        <polygon points="508,190 512,198 516,190" fill="#DEDAD4"/>
+
+        <!-- ═══ ROW 2: Style QC (Patty) ═══ -->
+        <rect x="432" y="198" width="160" height="60" fill="#2B3D2C" rx="2"/>
+        <text x="512" y="224" text-anchor="middle" font-size="9" fill="rgba(255,255,255,.5)" letter-spacing="1.5">STEP 4 · PATTY</text>
+        <text x="512" y="242" text-anchor="middle" font-size="12" font-weight="700" fill="#fff">Style &amp; Creative QC</text>
+
+        <!-- arrow left from Style QC -->
+        <line x1="432" y1="228" x2="394" y2="228" stroke="#DEDAD4" stroke-width="1.5"/>
+        <polygon points="394,224 386,228 394,232" fill="#DEDAD4"/>
+
+        <!-- ═══ Film QC ═══ -->
+        <rect x="226" y="198" width="160" height="60" fill="#3D2213" rx="2"/>
+        <text x="306" y="224" text-anchor="middle" font-size="9" fill="rgba(255,255,255,.5)" letter-spacing="1.5">STEP 5 · FILM</text>
+        <text x="306" y="242" text-anchor="middle" font-size="12" font-weight="700" fill="#fff">Mood &amp; Shot QC</text>
+
+        <!-- arrow left from Film QC -->
+        <line x1="226" y1="228" x2="188" y2="228" stroke="#DEDAD4" stroke-width="1.5"/>
+        <polygon points="188,224 180,228 188,232" fill="#DEDAD4"/>
+
+        <!-- ═══ GATE ═══ -->
+        <rect x="20" y="198" width="160" height="60" fill="#0F0F0F" rx="2"/>
+        <text x="100" y="222" text-anchor="middle" font-size="9" fill="rgba(255,255,255,.45)" letter-spacing="1.5">FINAL GATE</text>
+        <text x="100" y="242" text-anchor="middle" font-size="12" font-weight="700" fill="#fff">Before Each Shot</text>
+
+        <!-- arrow down from gate -->
+        <line x1="100" y1="258" x2="100" y2="336" stroke="#DEDAD4" stroke-width="1.5"/>
+        <polygon points="96,336 100,344 104,336" fill="#DEDAD4"/>
+
+        <!-- ═══ SHOOT ═══ -->
+        <rect x="20" y="344" width="160" height="60" fill="#0F0F0F" rx="2" stroke="#9A7B2E" stroke-width="1.5"/>
+        <text x="100" y="368" text-anchor="middle" font-size="9" fill="#9A7B2E" letter-spacing="1.5">ACTION</text>
+        <text x="100" y="386" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">▶ Shoot</text>
+
+        <!-- return arrow: shoot → product control (loop) -->
+        <!-- down from shoot, across bottom, up to product control -->
+        <path d="M 100 404 L 100 440 L 20 440 L 20 440" stroke="#DEDAD4" stroke-width="1.5" fill="none"/>
+        <!-- label -->
+        <text x="60" y="436" text-anchor="middle" font-size="9" fill="#BBB" letter-spacing="1">NEXT SCENE</text>
+        <!-- arrow up on left -->
+        <line x1="20" y1="440" x2="20" y2="52" stroke="#DEDAD4" stroke-width="1.5" stroke-dasharray="4,3"/>
+        <polygon points="16,60 20,52 24,60" fill="#DEDAD4"/>
+
+        <!-- ── DETAIL NOTES: right side ── -->
+        <rect x="620" y="52" width="130" height="354" fill="#F8F7F4" rx="2" stroke="#DEDAD4" stroke-width="1"/>
+        <text x="685" y="76" text-anchor="middle" font-size="9" fill="#8A8680" letter-spacing="1.5">DETAILS</text>
+        <line x1="630" y1="84" x2="740" y2="84" stroke="#DEDAD4" stroke-width="0.8"/>
+
+        <!-- Patty detail -->
+        <text x="630" y="102" font-size="9" fill="#2B3D2C" font-weight="700" letter-spacing="1">PATTY</text>
+        <text x="630" y="118" font-size="9" fill="#555">Controls all products</text>
+        <text x="630" y="132" font-size="9" fill="#555">Handover starts &amp; ends</text>
+        <text x="630" y="146" font-size="9" fill="#555">with Patty.</text>
+        <line x1="630" y1="158" x2="740" y2="158" stroke="#DEDAD4" stroke-width="0.8"/>
+
+        <!-- Cherry detail -->
+        <text x="630" y="174" font-size="9" fill="#1C1C3A" font-weight="700" letter-spacing="1">CHERRY</text>
+        <text x="630" y="190" font-size="9" fill="#555">Collects from Patty.</text>
+        <text x="630" y="204" font-size="9" fill="#555">Returns after scene.</text>
+        <text x="630" y="218" font-size="9" fill="#555">KOL fitting, hair,</text>
+        <text x="630" y="232" font-size="9" fill="#555">makeup, jewelry.</text>
+        <line x1="630" y1="244" x2="740" y2="244" stroke="#DEDAD4" stroke-width="0.8"/>
+
+        <!-- Film detail -->
+        <text x="630" y="260" font-size="9" fill="#3D2213" font-weight="700" letter-spacing="1">FILM</text>
+        <text x="630" y="276" font-size="9" fill="#555">Mood, framing, shot.</text>
+        <text x="630" y="290" font-size="9" fill="#555">BTS &amp; visibility.</text>
+        <text x="630" y="304" font-size="9" fill="#555">Lighting &amp; atmosphere.</text>
+        <line x1="630" y1="316" x2="740" y2="316" stroke="#DEDAD4" stroke-width="0.8"/>
+
+        <!-- Gate detail -->
+        <text x="630" y="332" font-size="9" fill="#0F0F0F" font-weight="700" letter-spacing="1">GATE</text>
+        <text x="630" y="348" font-size="9" fill="#555">Patty approves look.</text>
+        <text x="630" y="362" font-size="9" fill="#555">Film approves shot.</text>
+        <text x="630" y="376" font-size="9" fill="#555">▶ Final go-ahead.</text>
+
+        <!-- connector from diagram to detail box -->
+        <line x1="590" y1="228" x2="620" y2="228" stroke="#DEDAD4" stroke-width="1" stroke-dasharray="3,3"/>
+
+        <!-- ── LOOP LABEL ── -->
+        <text x="8" y="280" font-size="9" fill="#DEDAD4" transform="rotate(-90,8,280)" letter-spacing="2">LOOP PER SCENE</text>
+
+        <!-- ── TITLE ── -->
+        <text x="380" y="500" text-anchor="middle" font-size="10" fill="#DEDAD4" letter-spacing="2">QC FLOW · THE WAY SHE WEARS IT · 17 JUNE 2026</text>
+      </svg>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── CHECKLIST DATA ──
+const SECTIONS = [
+  {id:"patty",cls:"s01",name:"Patty — Product &amp; Creative Direction",role:"Creative Director",
+   items:["Control all products on set.","Final QC on styling, product placement, and overall creative direction.","Ensure each shot matches the brand mood and reference.","Approve before camera rolls."]},
+  {id:"cherry",cls:"s02",name:"Cherry — Product Support &amp; KOL Readiness",role:"Product Support &amp; KOL",
+   items:["Support QA: collect products from Patty and return after each scene.","QC KOL readiness before each shot.","Assist with fitting, dressing, hair, makeup, and jewelry check.","Prepare KOL for the next scene during setup change."]},
+  {id:"film",cls:"s03",name:"Film — Mood, Shots &amp; Visibility",role:"Camera &amp; BTS",
+   items:["QC mood, framing, and shot composition.","Ensure shots follow storyboard and creative direction.","Capture BTS, key moments, and project visibility.","Check lighting, movement, and atmosphere."]},
+  {id:"shot",cls:"sq",name:"Before Each Shot",role:"Pre-Shot Protocol · All",
+   items:["Product cleaned and positioned.","KOL outfit, hair, makeup, and posture checked.","Background, props, shadows, and reflections checked.","Shot purpose confirmed.","Patty gives final approval."]}
+];
+
+const state = {};
+SECTIONS.forEach(s=>{state[s.id]=s.items.map(()=>false);});
+
+function build(){
+  const root=document.getElementById("checklist-root");
+  root.innerHTML="";
+  SECTIONS.forEach(sec=>{
+    const wrap=document.createElement("div");
+    wrap.className=`section ${sec.cls}`;
+    const colorMap={s01:"#2B3D2C",s02:"#1C1C3A",s03:"#3D2213",sq:"#7A5A1A"};
+    const col=colorMap[sec.cls]||"#111";
+
+    const head=document.createElement("div");
+    head.className=`section-head ${sec.cls}`;
+    head.innerHTML=`<div><div class="section-name">${sec.name}</div><div class="section-role">${sec.role}</div></div><div class="section-prog"><div class="prog-count" id="cnt-${sec.id}">0/${sec.items.length}</div><div class="prog-track"><div class="prog-fill" id="pf-${sec.id}"></div></div></div>`;
+    wrap.appendChild(head);
+
+    const itemsWrap=document.createElement("div");
+    itemsWrap.className="items";
+    sec.items.forEach((text,idx)=>{
+      const row=document.createElement("div");
+      row.className="item"+(state[sec.id][idx]?" done":"");
+      row.innerHTML=`<div class="box" style="${state[sec.id][idx]?`background:${col};border-color:${col};`:""}"><span class="tick">✓</span></div><div class="item-label">${text}</div>`;
+      row.addEventListener("click",()=>{
+        state[sec.id][idx]=!state[sec.id][idx];
+        const isDone=state[sec.id][idx];
+        row.classList.toggle("done",isDone);
+        const box=row.querySelector(".box");
+        box.style.background=isDone?col:"#fff";
+        box.style.borderColor=isDone?col:"#C8C5BE";
+        updateSec(sec.id,sec.items.length);
+        updateTotal();
+      });
+      itemsWrap.appendChild(row);
+    });
+    wrap.appendChild(itemsWrap);
+    root.appendChild(wrap);
+    updateSec(sec.id,sec.items.length);
+  });
+  updateTotal();
+}
+
+function updateSec(id,total){
+  const done=state[id].filter(Boolean).length;
+  const pct=total?(done/total*100):0;
+  document.getElementById(`pf-${id}`).style.width=pct+"%";
+  document.getElementById(`cnt-${id}`).textContent=`${done}/${total}`;
+}
+
+function updateTotal(){
+  let done=0,total=0;
+  SECTIONS.forEach(s=>{total+=s.items.length;done+=state[s.id].filter(Boolean).length;});
+  document.getElementById("total-fill").style.width=(total?done/total*100:0)+"%";
+  document.getElementById("total-label").textContent=`${done} / ${total} complete`;
+}
+
+function resetAll(){
+  SECTIONS.forEach(s=>{state[s.id]=s.items.map(()=>false);});
+  build();
+}
+
+// ── TABS ──
+function switchTab(id,btn){
+  document.querySelectorAll(".panel").forEach(p=>p.classList.remove("active"));
+  document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
+  document.getElementById("panel-"+id).classList.add("active");
+  btn.classList.add("active");
+}
+
+build();
+</script>
+</body>
+</html>
