@@ -267,6 +267,131 @@
     color:var(--smoke); margin-bottom:10px; padding-top:14px; border-top:1px solid var(--wire);
   }
 </style>
+
+<!-- ═══ SUPABASE REALTIME SYNC ═══ -->
+<script type="module">
+  import { createClient }
+    from "https://esm.sh/@supabase/supabase-js@2";
+
+  // ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+  // PASTE YOUR 2 SUPABASE KEYS BELOW
+  //   Project Settings ▸ API ▸ "Project URL"  and  "anon public" key
+  // ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+  const SUPABASE_URL = "PASTE_PROJECT_URL";        // e.g. https://abcd1234.supabase.co
+  const SUPABASE_ANON_KEY = "PASTE_ANON_PUBLIC_KEY"; // long eyJhbGci... string
+  // ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+
+  const ROOM = "shoot_17jun2026";   // shared room id for all crew (change for a new shoot)
+  const TABLE = "checklist_state";  // table name created in Supabase (see setup steps)
+
+  let sb = null, syncReady = false;
+  const localCache = {};            // { key: value }  in-memory mirror
+  const subscribers = {};           // { key: [cb,...] }
+
+  try {
+    if (!SUPABASE_URL.startsWith("PASTE") && !SUPABASE_ANON_KEY.startsWith("PASTE")) {
+      sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      syncReady = true;
+    }
+  } catch(e){ console.warn("Supabase init failed, falling back to localStorage:", e); }
+
+  // Set a nested value inside an object by path array, mutating + returning root
+  function setDeep(root, pathArr, val){
+    let o = root;
+    for (let i=0;i<pathArr.length-1;i++){
+      const k = pathArr[i];
+      if (typeof o[k] !== "object" || o[k]===null) o[k] = {};
+      o = o[k];
+    }
+    o[pathArr[pathArr.length-1]] = val;
+    return root;
+  }
+
+  // Persist one row { room, key, value } via upsert (one row per top-level key)
+  async function persist(key){
+    if (!syncReady) return;
+    try {
+      await sb.from(TABLE).upsert(
+        { room: ROOM, key, value: localCache[key] ?? {} },
+        { onConflict: "room,key" }
+      );
+    } catch(e){ console.warn("persist fail", e); }
+  }
+
+  // Initial load of all rows for this room
+  async function initialLoad(){
+    if (!syncReady) return;
+    try {
+      const { data, error } = await sb.from(TABLE).select("key,value").eq("room", ROOM);
+      if (error) throw error;
+      (data||[]).forEach(row=>{
+        localCache[row.key] = row.value;
+        (subscribers[row.key]||[]).forEach(cb=>cb(row.value));
+      });
+    } catch(e){ console.warn("initial load fail", e); }
+  }
+
+  // Realtime: listen for any change to this room's rows → push to subscribers
+  function startRealtime(){
+    if (!syncReady) return;
+    sb.channel("room_"+ROOM)
+      .on("postgres_changes",
+        { event: "*", schema: "public", table: TABLE, filter: `room=eq.${ROOM}` },
+        payload => {
+          const row = payload.new;
+          if (!row || !row.key) return;
+          localCache[row.key] = row.value;
+          (subscribers[row.key]||[]).forEach(cb=>cb(row.value));
+        })
+      .subscribe();
+  }
+
+  // Same CrewSync API the page scripts already use
+  window.CrewSync = {
+    ready: () => syncReady,
+
+    // full-blob seed of a key
+    push(key, value){
+      if (!syncReady) return;
+      localCache[key] = value;
+      persist(key);
+    },
+
+    // conflict-free: write ONLY the changed field. path like "fitting/3/1"
+    setField(path, value){
+      if (!syncReady) return;
+      const parts = path.split("/");
+      const key = parts[0];                 // top-level group: fitting | checklist | talent
+      const rest = parts.slice(1);          // [itemIdx, cbIdx] or [secId, idx]
+      if (!localCache[key] || typeof localCache[key] !== "object") localCache[key] = {};
+      setDeep(localCache[key], rest, value);
+      persist(key);                          // upsert the one group's row
+    },
+
+    // seed only if this key has no data yet (won't clobber crew progress)
+    async seedIfEmpty(key, value){
+      if (!syncReady) return;
+      if (localCache[key] && Object.keys(localCache[key]).length) return;
+      try {
+        const { data } = await sb.from(TABLE).select("key").eq("room",ROOM).eq("key",key).maybeSingle();
+        if (!data){ localCache[key] = value; persist(key); }
+      } catch(e){}
+    },
+
+    // subscribe to a top-level key; cb(value) fires on load + every remote change
+    subscribe(key, cb){
+      (subscribers[key] = subscribers[key]||[]).push(cb);
+      if (localCache[key] !== undefined) cb(localCache[key]); // fire with cached if present
+    }
+  };
+
+  // Boot: load existing state, open realtime channel, then announce ready
+  (async ()=>{
+    if (syncReady){ await initialLoad(); startRealtime(); }
+    window.dispatchEvent(new Event("crewsync-ready"));
+  })();
+</script>
+
 </head>
 <body>
 
@@ -274,7 +399,19 @@
   <div class="studio-tag">Sapiens Creative Studio &nbsp;·&nbsp; The Way She Wears It &nbsp;·&nbsp; 17 June 2026</div>
   <h1 class="doc-title">Pre-Shoot Role &amp; QC Checklist</h1>
   <div class="doc-sub">On-Set Quality Control &nbsp;·&nbsp; All Crew</div>
+  <div id="sync-badge" class="sync-badge">○ Local only</div>
 </header>
+
+<style>
+.sync-badge{
+  display:inline-block; margin-top:8px;
+  font-size:11px; font-weight:700; letter-spacing:0.08em;
+  padding:4px 12px; border-radius:20px;
+  background:#EDEAE4; color:#8A8680;
+  text-transform:uppercase;
+}
+.sync-badge.on{ background:#2D5A3D; color:#fff; }
+</style>
 
 <!-- TABS -->
 <div class="tabs">
@@ -651,6 +788,7 @@ function build(){
         box.style.borderColor=isDone?col:"#C8C5BE";
         updateSec(sec.id,sec.items.length);
         updateTotal();
+        saveChecklist(sec.id, idx, isDone);
       });
       itemsWrap.appendChild(row);
     });
@@ -731,14 +869,78 @@ function buildTalent(){
         const box=row.querySelector(".box");
         box.style.background=d?"#0F0F0F":"#fff";
         box.style.borderColor=d?"#0F0F0F":"#C8C5BE";
+        saveTalent(gi, idx, d);
       });
       root.appendChild(row);
     });
   });
 }
 
+// ── CHECKLIST + TALENT SYNC (field-level, conflict-free) ────────────
+function saveChecklist(secId, idx, val){
+  try { localStorage.setItem('cl_state', JSON.stringify(state)); } catch(e){}
+  if (window.CrewSync && window.CrewSync.ready()){
+    if (secId !== undefined) window.CrewSync.setField(`checklist/${secId}/${idx}`, val);
+    else window.CrewSync.seedIfEmpty('checklist', state);
+  }
+}
+function saveTalent(gi, idx, val){
+  try { localStorage.setItem('tl_state', JSON.stringify(tlState)); } catch(e){}
+  if (window.CrewSync && window.CrewSync.ready()){
+    if (gi !== undefined) window.CrewSync.setField(`talent/${gi}/${idx}`, val);
+    else window.CrewSync.seedIfEmpty('talent', tlState);
+  }
+}
+function loadChecklistLocal(){
+  try { const s=localStorage.getItem('cl_state'); if(s){ const o=JSON.parse(s);
+    Object.keys(o).forEach(k=>{ if(state[k]) state[k]=o[k]; }); } } catch(e){}
+}
+function loadTalentLocal(){
+  try { const s=localStorage.getItem('tl_state'); if(s){ const o=JSON.parse(s);
+    Object.keys(o).forEach(k=>{ if(tlState[k]) tlState[k]=o[k]; }); } } catch(e){}
+}
+// merge remote snapshot into local state, then refresh DOM
+function applyChecklist(remote){
+  if(!remote) return;
+  Object.keys(remote).forEach(secId=>{
+    if(!state[secId]) return;
+    const arr = remote[secId];
+    if(Array.isArray(arr)){ arr.forEach((v,i)=>{ if(i<state[secId].length) state[secId][i]=!!v; }); }
+    else { Object.keys(arr).forEach(i=>{ state[secId][i]=!!arr[i]; }); } // firebase may send object for sparse arrays
+  });
+  build();
+}
+function applyTalent(remote){
+  if(!remote) return;
+  Object.keys(remote).forEach(gi=>{
+    if(!tlState[gi]) return;
+    const arr = remote[gi];
+    if(Array.isArray(arr)){ arr.forEach((v,i)=>{ if(i<tlState[gi].length) tlState[gi][i]=!!v; }); }
+    else { Object.keys(arr).forEach(i=>{ tlState[gi][i]=!!arr[i]; }); }
+  });
+  buildTalent();
+}
+
+loadChecklistLocal();
+loadTalentLocal();
 build();
 buildTalent();
+
+function wireCrewSync(){
+  if (!(window.CrewSync && window.CrewSync.ready())) return;
+  // guard: apply functions may live in a later script block
+  if (typeof applyFitting !== 'function'){ setTimeout(wireCrewSync, 60); return; }
+  window.CrewSync.subscribe('checklist', applyChecklist);
+  window.CrewSync.subscribe('talent',    applyTalent);
+  window.CrewSync.subscribe('fitting',   applyFitting);
+  const badge = document.getElementById('sync-badge');
+  if (badge){ badge.textContent = '● Live sync on'; badge.classList.add('on'); }
+}
+// wire after full load so every apply* function is defined
+window.addEventListener('load', ()=>{
+  if (window.CrewSync && window.CrewSync.ready()) wireCrewSync();
+  else window.addEventListener('crewsync-ready', wireCrewSync);
+});
 </script>
 
 <!-- ═══════════════════════════════════════════
@@ -1274,12 +1476,16 @@ function statusLabel(s) {
 }
 
 
-// ── AUTO-SAVE fitting state ────────────────────────────────────────────
-function saveFSState() {
+// ── AUTO-SAVE fitting state (field-level, conflict-free) ───────────
+function saveFSState(itemIdx, cbIdx, val) {
   try {
-    const state = FS_ITEMS.map(i=>i.state);
-    localStorage.setItem('fs_state', JSON.stringify(state));
+    const states = FS_ITEMS.map(i=>i.state);
+    localStorage.setItem('fs_state', JSON.stringify(states));
   } catch(e) {}
+  if (window.CrewSync && window.CrewSync.ready()){
+    if (itemIdx !== undefined) window.CrewSync.setField(`fitting/${itemIdx}/${cbIdx}`, val);
+    else window.CrewSync.seedIfEmpty('fitting', FS_ITEMS.map(i=>i.state));
+  }
 }
 function loadFSState() {
   try {
@@ -1289,6 +1495,17 @@ function loadFSState() {
       states.forEach((s,i)=>{ if(FS_ITEMS[i]) FS_ITEMS[i].state = s; });
     }
   } catch(e) {}
+}
+// merge remote snapshot field-by-field, refresh cards
+function applyFitting(states){
+  if(!states) return;
+  Object.keys(states).forEach(i=>{
+    if(!FS_ITEMS[i]) return;
+    const arr = states[i];
+    if(Array.isArray(arr)){ arr.forEach((v,c)=>{ FS_ITEMS[i].state[c]=!!v; }); }
+    else { Object.keys(arr).forEach(c=>{ FS_ITEMS[i].state[c]=!!arr[c]; }); }
+  });
+  buildFitting();
 }
 loadFSState();
 
@@ -1357,7 +1574,7 @@ function buildFSCard(item, idx) {
       const on = item.state[ci];
       cell.classList.toggle("checked", on && !isPending);
       cell.classList.toggle("pending-item", on && isPending);
-      saveFSState();
+      saveFSState(idx, ci, on);
     });
     cbRow.appendChild(cell);
   });
